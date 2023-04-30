@@ -1,78 +1,101 @@
-using System;
-using System.Collections;
-
+using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
-using Photon.Pun;
-using Photon.Realtime;
-
-namespace Com.MyCompany.MyGame
+[DefaultExecutionOrder(-1)]
+public class GameManager : MonoBehaviour
 {
-    public class GameManager : MonoBehaviourPunCallbacks
+    public static GameManager Instance { get; private set; }
+
+    public float initialGameSpeed = 5f;
+    public float gameSpeedIncrease = 0.1f;
+    public float gameSpeed { get; private set; }
+
+    public TextMeshProUGUI scoreText;
+    public TextMeshProUGUI hiscoreText;
+    public TextMeshProUGUI gameOverText;
+    public Button retryButton;
+
+    private Player player;
+    private Spawner spawner;
+
+    private float score;
+
+    private void Awake()
     {
+        if (Instance != null) {
+            DestroyImmediate(gameObject);
+        } else {
+            Instance = this;
+        }
+    }
 
-        #region Photon Callbacks
+    private void OnDestroy()
+    {
+        if (Instance == this) {
+            Instance = null;
+        }
+    }
 
-        /// <summary>
-        /// Called when the local player left the room. We need to load the launcher scene.
-        /// </summary>
-        public override void OnLeftRoom()
-        {
-            SceneManager.LoadScene(0);
+    private void Start()
+    {
+        player = FindObjectOfType<Player>();
+        spawner = FindObjectOfType<Spawner>();
+
+        NewGame();
+    }
+
+    public void NewGame()
+    {
+        Obstacle[] obstacles = FindObjectsOfType<Obstacle>();
+
+        foreach (var obstacle in obstacles) {
+            Destroy(obstacle.gameObject);
         }
 
-        #endregion
+        score = 0f;
+        gameSpeed = initialGameSpeed;
+        enabled = true;
 
-        #region Public Methods
+        player.gameObject.SetActive(true);
+        spawner.gameObject.SetActive(true);
+        gameOverText.gameObject.SetActive(false);
+        retryButton.gameObject.SetActive(false);
 
-        public void LeaveRoom()
+        UpdateHiscore();
+    }
+
+    public void GameOver()
+    {
+        gameSpeed = 0f;
+        enabled = false;
+
+        player.gameObject.SetActive(false);
+        spawner.gameObject.SetActive(false);
+        gameOverText.gameObject.SetActive(true);
+        retryButton.gameObject.SetActive(true);
+
+        UpdateHiscore();
+    }
+
+    private void Update()
+    {
+        gameSpeed += gameSpeedIncrease * Time.deltaTime;
+        score += gameSpeed * Time.deltaTime;
+        scoreText.text = Mathf.FloorToInt(score).ToString("D5");
+    }
+
+    private void UpdateHiscore()
+    {
+        float hiscore = PlayerPrefs.GetFloat("hiscore", 0);
+
+        if (score > hiscore)
         {
-            PhotonNetwork.LeaveRoom();
+            hiscore = score;
+            PlayerPrefs.SetFloat("hiscore", hiscore);
         }
 
-        #endregion
-        #region Private Methods
-
-        void LoadArena()
-        {
-            if (!PhotonNetwork.IsMasterClient)
-            {
-                Debug.LogError("PhotonNetwork : Trying to Load a level but we are not the master Client");
-                return;
-            }
-            Debug.LogFormat("PhotonNetwork : Loading Level : {0}", PhotonNetwork.CurrentRoom.PlayerCount);
-            PhotonNetwork.LoadLevel("Room for " + PhotonNetwork.CurrentRoom.PlayerCount);
-        }
-
-        #endregion
-        #region Photon Callbacks
-
-        public override void OnPlayerEnteredRoom(Player other)
-        {
-            Debug.LogFormat("OnPlayerEnteredRoom() {0}", other.NickName); // not seen if you're the player connecting
-
-            if (PhotonNetwork.IsMasterClient)
-            {
-                Debug.LogFormat("OnPlayerEnteredRoom IsMasterClient {0}", PhotonNetwork.IsMasterClient); // called before OnPlayerLeftRoom
-
-                LoadArena();
-            }
-        }
-
-        public override void OnPlayerLeftRoom(Player other)
-        {
-            Debug.LogFormat("OnPlayerLeftRoom() {0}", other.NickName); // seen when other disconnects
-
-            if (PhotonNetwork.IsMasterClient)
-            {
-                Debug.LogFormat("OnPlayerLeftRoom IsMasterClient {0}", PhotonNetwork.IsMasterClient); // called before OnPlayerLeftRoom
-
-                LoadArena();
-            }
-        }
-
-        #endregion
+        hiscoreText.text = Mathf.FloorToInt(hiscore).ToString("D5");
     }
 
 }
