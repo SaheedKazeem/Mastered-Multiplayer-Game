@@ -41,12 +41,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 1129172805548280625}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 06312b1955e91f3479138c86bbc3f9ad, type: 3}
+  m_Script: {fileID: 11500000, guid: 7d5da96afa3b8f34192670c07fc03ced, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  initialGameSpeed: 5
-  gameSpeedIncrease: 0.1
-  scoreText: {fileID: 0}
-  hiscoreText: {fileID: 0}
-  gameOverText: {fileID: 0}
-  retryButton: {fileID: 0}
